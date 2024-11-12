@@ -1,0 +1,47 @@
+name: microservices
+
+services:
+  song-service:
+    container_name: song-service
+    env_file:
+      - .env
+    build: ./song
+    ports:
+      - 8092:8092
+    depends_on: 
+     - db-song
+    environment:
+      DOCKER_HOST_IP: song-db
+
+  resource-service:
+    container_name: resource-service
+    env_file:
+      - .env
+    build: ./resource
+    ports:
+      - 8091:8091
+    depends_on:
+      - db-resource
+    environment:
+      DOCKER_HOST_IP: resource-db
+      DOCKER_SONGS_HOST: song-service
+  
+  db-song:
+     image: postgres:16-alpine
+     container_name: song-db
+     volumes:
+       - ./init-scripts/song_db/init.sql:/docker-entrypoint-initdb.d/db.sql
+     environment:
+       POSTGRES_USER: ${song_db_user}
+       POSTGRES_PASSWORD: ${song_db_password}
+       POSTGRES_DB: ${song_db_name}
+       
+  db-resource:
+    image: postgres:16-alpine
+    container_name: resource-db
+    volumes:
+      - ./init-scripts/resource_db/init.sql:/docker-entrypoint-initdb.d/db.sql
+    environment:
+      POSTGRES_USER: ${resource_db_user}
+      POSTGRES_PASSWORD: ${resource_db_password}
+      POSTGRES_DB: ${resource_db_name}
