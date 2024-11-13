@@ -11,6 +11,7 @@ public class SongConverter {
 		song.setName(dto.getName());
 		song.setArtist(dto.getArtist());
 		song.setAlbum(dto.getAlbum());
+		song.setResourceId(dto.getResourceId());
 	}
 
 	public static void convertToDTO(SongDTO dto, Song song) {
@@ -20,5 +21,6 @@ public class SongConverter {
 		dto.setName(song.getName());
 		dto.setArtist(song.getArtist());
 		dto.setAlbum(song.getAlbum());
+		dto.setResourceId(song.getResourceId());
 	}
 }

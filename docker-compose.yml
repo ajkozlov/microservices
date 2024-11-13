@@ -2,33 +2,41 @@ name: microservices
 
 services:
   song-service:
-    container_name: song-service
+    deploy:
+      replicas: 2
     env_file:
       - .env
     build: ./song
     ports:
-      - 8092:8092
+      - 8092-8093:8092
     depends_on: 
      - db-song
+     - eureka
     environment:
-      DOCKER_HOST_IP: song-db
+      DOCKER_EUREKA: eureka
+      DOCKER_DB: song-db
 
   resource-service:
-    container_name: resource-service
     env_file:
       - .env
     build: ./resource
     ports:
-      - 8091:8091
+      - 8095:8091
     depends_on:
       - db-resource
+      - eureka
     environment:
-      DOCKER_HOST_IP: resource-db
-      DOCKER_SONGS_HOST: song-service
+      DOCKER_EUREKA: eureka
+      DOCKER_DB: resource-db
+      
+  eureka:
+    build: ./eureka-server
+    ports:
+      - 8761:8761
   
   db-song:
+     hostname: song-db
      image: postgres:16-alpine
-     container_name: song-db
      volumes:
        - ./init-scripts/song_db/init.sql:/docker-entrypoint-initdb.d/db.sql
      environment:
@@ -37,8 +45,8 @@ services:
        POSTGRES_DB: ${song_db_name}
        
   db-resource:
+    hostname: resource-db
     image: postgres:16-alpine
-    container_name: resource-db
     volumes:
       - ./init-scripts/resource_db/init.sql:/docker-entrypoint-initdb.d/db.sql
     environment:

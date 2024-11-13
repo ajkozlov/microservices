@@ -45,4 +45,10 @@ public class SongController {
 		List<Long> idList = songService.deleteSongs(id);
 		return ResponseEntity.ok(new DeleteResponse(idList));
 	}
+	
+	@DeleteMapping(value = "/by-resource/{id}", produces = "application/json")
+	public ResponseEntity<DeleteResponse> deleteSongByResource(@PathVariable("id") Long id) {
+		List<Long> idList = songService.deleteSongsByResource(id);
+		return ResponseEntity.ok(new DeleteResponse(idList));
+	}
 }

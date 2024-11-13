@@ -5,6 +5,7 @@ import com.epam.lerning.song.api.SongCreationResponse;
 import com.epam.lerning.song.api.SongDTO;
 import com.epam.lerning.song.domain.Song;
 import com.epam.lerning.song.domain.SongRepository;
+import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -33,6 +34,9 @@ public class SongService {
 	}
 
 	public SongCreationResponse saveSong(SongDTO songDTO) {
+		if (songDTO.getId() != null && songRepository.existsById(songDTO.getId())) {
+			throw new ResponseStatusException(HttpStatus.CONFLICT, "Song with id "+songDTO.getId()+" already exists");
+		}
 		Song song = new Song();
 		SongConverter.convertToEntity(songDTO, song);
 		songRepository.save(song);
@@ -51,5 +55,10 @@ public class SongService {
 		}
 		songRepository.deleteAllById(idList);
 		return idList;
+	}
+
+	@Transactional
+	public List<Long> deleteSongsByResource(Long id) {
+		return List.of(songRepository.deleteByResourceId(id));
 	}
 }
