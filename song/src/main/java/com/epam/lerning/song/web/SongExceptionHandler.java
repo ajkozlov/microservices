@@ -30,7 +30,7 @@ public class SongExceptionHandler {
 	@ExceptionHandler(ResponseStatusException.class)
 	public ResponseEntity<SongExceptionResponse> handleResourceNotFoundException(ResponseStatusException ex, HttpServletRequest request) {
 		log.error(ex);
-		return ResponseEntity.badRequest().body(new SongExceptionResponse(ex.getStatusCode().value(), ex.getReason()));
+		return ResponseEntity.status(ex.getStatusCode()).body(new SongExceptionResponse(ex.getStatusCode().value(), ex.getReason()));
 	}
 
 	@ExceptionHandler(MethodArgumentNotValidException.class)
@@ -39,7 +39,7 @@ public class SongExceptionHandler {
 		log.error(ex);
 		Map<String, String> details = ex.getAllErrors().stream().collect(
 				Collectors.toMap(e -> ((FieldError)e).getField(), DefaultMessageSourceResolvable::getDefaultMessage));
-		return ResponseEntity.badRequest()
+		return ResponseEntity.status(ex.getStatusCode())
 							 .body(new SongExceptionWithDetailsResponse(ex.getStatusCode().value(), "Validation error", details));
 	}
 }

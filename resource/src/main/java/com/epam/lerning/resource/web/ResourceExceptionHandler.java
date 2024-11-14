@@ -28,21 +28,21 @@ public class ResourceExceptionHandler {
 	public ResponseEntity<ResourceExceptionResponse> handleResourceNotFoundException(ResponseStatusException ex,
 																					 HttpServletRequest request) {
 		log.info(ex);
-		return ResponseEntity.badRequest().body(new ResourceExceptionResponse(ex.getStatusCode().value(), ex.getReason()));
+		return ResponseEntity.status(ex.getStatusCode()).body(new ResourceExceptionResponse(ex.getStatusCode().value(), ex.getReason()));
 	}
 	
 	@ExceptionHandler(HttpMediaTypeNotSupportedException.class)
 	public ResponseEntity<ResourceExceptionResponse> handleMediaTypeNotSupportedException(HttpMediaTypeNotSupportedException ex,
 																					 HttpServletRequest request) {
 		log.info(ex);
-		return ResponseEntity.badRequest().body(new ResourceExceptionResponse(ex.getStatusCode().value(), ex.getMessage()));
+		return ResponseEntity.status(ex.getStatusCode()).body(new ResourceExceptionResponse(ex.getStatusCode().value(), ex.getMessage()));
 	}
 	
 	@ExceptionHandler(HttpClientErrorException.class)
 	public ResponseEntity<ResourceExceptionResponse> handleHttpClientErrorException(HttpClientErrorException ex,
 																						  HttpServletRequest request) {
 		log.info(ex);
-		return ResponseEntity.badRequest().body(new ResourceExceptionResponse(ex.getStatusCode().value(), ex.getMessage()));
+		return ResponseEntity.status(ex.getStatusCode()).body(new ResourceExceptionResponse(ex.getStatusCode().value(), ex.getMessage()));
 	}
 
 	@ExceptionHandler(MethodArgumentTypeMismatchException.class)
