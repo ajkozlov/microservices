@@ -7,11 +7,11 @@ services:
     env_file:
       - .env
     build: ./song
-    ports:
-      - 8092-8093:8092
-    depends_on: 
-     - db-song
-     - eureka
+#    ports:
+#      - 8092-8093:8092
+    depends_on:
+      - db-song
+      - eureka
     environment:
       DOCKER_EUREKA: eureka
       DOCKER_DB: song-db
@@ -20,8 +20,8 @@ services:
     env_file:
       - .env
     build: ./resource
-    ports:
-      - 8095:8091
+#    ports:
+#      - 8095:8091
     depends_on:
       - db-resource
       - eureka
@@ -33,6 +33,15 @@ services:
     build: ./eureka-server
     ports:
       - 8761:8761
+        
+  gateway:
+    build: ./gateway
+    ports:
+      - 8888:8888
+    depends_on:
+      - eureka
+    environment:
+      DOCKER_EUREKA: eureka
   
   db-song:
      hostname: song-db

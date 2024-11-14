@@ -58,7 +58,7 @@ public class ResourceService {
 		songDTO.setResourceId(id);
 		songDTO.setYear(Optional.ofNullable(metadata.get("xmpDM:releaseDate")).orElse("1900"));
 		Duration period = Duration.ofMillis((long)(Float.parseFloat(Optional.ofNullable(metadata.get("xmpDM:duration")).orElse("100")) * 1000L));
-		songDTO.setDuration(period.toMinutesPart() +":"+ period.toSecondsPart());
+		songDTO.setDuration(String.format("%02d", period.toMinutesPart()) +":"+ String.format("%02d", period.toSecondsPart()));
 		songDTO.setName(Optional.ofNullable(metadata.get("dc:title")).orElse("Default"));
 		songDTO.setArtist(Optional.ofNullable(metadata.get("xmpDM:artist")).orElse(""));
 		songDTO.setAlbum(Optional.ofNullable(metadata.get("xmpDM:album")).orElse(""));
