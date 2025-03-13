@@ -15,6 +15,8 @@ services:
     environment:
       DOCKER_EUREKA: eureka
       DOCKER_DB: song-db
+    networks:
+      - ls
 
   resource-service:
     env_file:
@@ -28,11 +30,17 @@ services:
     environment:
       DOCKER_EUREKA: eureka
       DOCKER_DB: resource-db
+    dns:
+      - 10.0.2.20
+    networks:
+      - ls
       
   eureka:
     build: ./eureka-server
     ports:
       - 8761:8761
+    networks:
+      - ls
         
   gateway:
     build: ./gateway
@@ -42,6 +50,8 @@ services:
       - eureka
     environment:
       DOCKER_EUREKA: eureka
+    networks:
+      - ls
   
   db-song:
      hostname: song-db
@@ -52,6 +62,8 @@ services:
        POSTGRES_USER: ${song_db_user}
        POSTGRES_PASSWORD: ${song_db_password}
        POSTGRES_DB: ${song_db_name}
+     networks:
+       - ls
        
   db-resource:
     hostname: resource-db
@@ -62,3 +74,28 @@ services:
       POSTGRES_USER: ${resource_db_user}
       POSTGRES_PASSWORD: ${resource_db_password}
       POSTGRES_DB: ${resource_db_name}
+    networks:
+      - ls
+      
+  localstack:
+    container_name: "${LOCALSTACK_DOCKER_NAME:-localstack-main}"
+    image: localstack/localstack:s3-latest
+    ports:
+      # Now only required if you need to access LocalStack from the host
+      - "127.0.0.1:4566:4566"
+      # Now only required if you need to access LocalStack from the host
+      - "127.0.0.1:4510-4559:4510-4559"
+    environment:
+      - DEBUG=${DEBUG:-0}
+    volumes:
+      - "${LOCALSTACK_VOLUME_DIR:-./volume}:/var/lib/localstack"
+      - "/var/run/docker.sock:/var/run/docker.sock"
+    networks:
+      ls:
+        ipv4_address: 10.0.2.20
+
+networks:
+  ls:
+    ipam:
+      config:
+        - subnet: 10.0.2.0/24

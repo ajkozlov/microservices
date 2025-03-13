@@ -3,6 +3,7 @@ package com.epam.learning.resource.service;
 import com.epam.learning.resource.api.SongDTO;
 import com.epam.learning.resource.domain.Resource;
 import com.epam.learning.resource.domain.ResourceRepository;
+import com.epam.learning.resource.repository.S3Service;
 import org.springframework.cloud.client.discovery.DiscoveryClient;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
@@ -19,8 +20,11 @@ import org.xml.sax.SAXException;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.time.Duration;
 import java.util.Arrays;
+import java.util.Formatter;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -34,12 +38,14 @@ public class ResourceService {
 	private final ResourceRepository repository;
 	private final RestClient restClient;
 	private final DiscoveryClient discoveryClient;
+	private final S3Service s3Service;
 
 	public ResourceService(ResourceRepository repository, RestClient.Builder restClientBuilder,
-						   DiscoveryClient discoveryClient) {
+						   DiscoveryClient discoveryClient, S3Service s3Service) {
 		this.repository = repository;
 		this.discoveryClient = discoveryClient;
 		this.restClient = restClientBuilder.build();
+		this.s3Service = s3Service;
 	}
 
 	private void saveMetadata(byte[] file, Long id) throws TikaException, IOException, SAXException {
@@ -74,13 +80,47 @@ public class ResourceService {
 	}
 
 	public Long crateResource(byte[] file) throws IOException, TikaException, SAXException {
-		Resource resource = new Resource(file);
+		Resource resource = new Resource(saveToCloud(file));
 		repository.save(resource);
 		saveMetadata(file, resource.getId());
 		return resource.getId();
 	}
+	
+	public byte[] getResource(String key) {
+		try {
+			return s3Service.download(key);
+		} catch (IOException e) {
+			throw new RuntimeException(e);
+		}
+	}
 
+	private String saveToCloud(byte[] file) {
+		String hash = SHAsum(file);
+		try {
+			s3Service.save(hash, file);
+		} catch (IOException e) {
+			throw new RuntimeException(e);
+		}
+		return hash;
+	}
 
+	private static String SHAsum(byte[] convertme) {
+		MessageDigest md = null;
+		try {
+			md = MessageDigest.getInstance("SHA-1");
+		} catch (NoSuchAlgorithmException e) {
+			throw new RuntimeException(e);
+		}
+		return byteArray2Hex(md.digest(convertme));
+	}
+
+	private static String byteArray2Hex(final byte[] hash) {
+		Formatter formatter = new Formatter();
+		for (byte b : hash) {
+			formatter.format("%02x", b);
+		}
+		return formatter.toString();
+	}
 
 	public List<Long> deleteResources(String ids) {
 		List<Long> idList;

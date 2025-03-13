@@ -36,7 +36,7 @@ public class ResourceController {
 		Resource resource = resourceService.findById(id);
 		HttpHeaders headers = new HttpHeaders();
 		headers.set("Content-Disposition", "attachment; filename=\"" + id +".mp3\"");
-		return new ResponseEntity<>(resource.getMp3(), headers, HttpStatus.OK);
+		return new ResponseEntity<>(resourceService.getResource(resource.getMp3()), headers, HttpStatus.OK);
 	}
 
 	@PostMapping(consumes = "audio/mpeg")

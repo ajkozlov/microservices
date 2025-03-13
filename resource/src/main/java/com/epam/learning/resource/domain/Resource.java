@@ -19,7 +19,7 @@ import lombok.Setter;
 @NoArgsConstructor
 public class Resource {
 	
-	public Resource(byte[] mp3){
+	public Resource(String mp3){
 		this.mp3 = mp3;
 	}
 	
@@ -28,5 +28,5 @@ public class Resource {
 	private Long id;
 
 	@Column(columnDefinition = "bytea")
-	private byte[] mp3;
+	private String mp3;
 }
