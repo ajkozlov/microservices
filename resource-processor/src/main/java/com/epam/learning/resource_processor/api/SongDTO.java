@@ -1,4 +1,4 @@
-package com.epam.learning.resource.api;
+package com.epam.learning.resource_processor.api;
 
 import lombok.Data;
 

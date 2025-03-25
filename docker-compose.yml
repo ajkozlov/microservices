@@ -27,11 +27,24 @@ services:
     depends_on:
       - db-resource
       - eureka
+      - rabbitMQ
     environment:
       DOCKER_EUREKA: eureka
       DOCKER_DB: resource-db
     dns:
       - 10.0.2.20
+    networks:
+      - ls
+        
+  resource-processor-service:
+    env_file:
+      - .env
+    build: ./resource-processor
+    depends_on:
+      - eureka
+      - rabbitMQ
+    environment:
+      DOCKER_EUREKA: eureka
     networks:
       - ls
       
@@ -80,6 +93,7 @@ services:
   localstack:
     container_name: "${LOCALSTACK_DOCKER_NAME:-localstack-main}"
     image: localstack/localstack
+    command: bash -c "aws configure && aws --endpoint-url=http://localhost:4566 s3api create-bucket --bucket resources-bucket"
     ports:
       # Now only required if you need to access LocalStack from the host
       - "127.0.0.1:4566:4566"
@@ -93,6 +107,27 @@ services:
     networks:
       ls:
         ipv4_address: 10.0.2.20
+  
+  rabbitMQ:
+    container_name: 'resource-rabbit'
+    image: rabbitmq
+    command: rabbitmq-server
+    hostname: rabbitmq
+    environment:
+      - 'RABBITMQ_DEFAULT_PASS=secret'
+      - 'RABBITMQ_DEFAULT_USER=myuser'
+    ports:
+        - '5672'
+    expose:
+      - 5672
+      - 15672
+    healthcheck:
+      test: [ "CMD", "nc", "-z", "localhost", "5672" ]
+      interval: 5s
+      timeout: 15s
+      retries: 1
+    networks:
+      - ls
 
 networks:
   ls:
