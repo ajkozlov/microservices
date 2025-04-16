@@ -3,12 +3,12 @@ name: microservices
 services:
   song-service:
     deploy:
-      replicas: 2
+      replicas: 1
     env_file:
       - .env
     build: ./song
-#    ports:
-#      - 8092-8093:8092
+    ports:
+      - 5005:5005
     depends_on:
       - db-song
       - eureka
@@ -93,7 +93,7 @@ services:
   localstack:
     container_name: "${LOCALSTACK_DOCKER_NAME:-localstack-main}"
     image: localstack/localstack
-    command: bash -c "aws configure && aws --endpoint-url=http://localhost:4566 s3api create-bucket --bucket resources-bucket"
+#    command: bash -c "aws configure && aws --endpoint-url=http://localhost:4566 s3api create-bucket --bucket resources-bucket"
     ports:
       # Now only required if you need to access LocalStack from the host
       - "127.0.0.1:4566:4566"
@@ -104,6 +104,7 @@ services:
     volumes:
       - "${LOCALSTACK_VOLUME_DIR:-./volume}:/var/lib/localstack"
       - "/var/run/docker.sock:/var/run/docker.sock"
+      - "./init-scripts/localstack/init-aws.sh:/etc/localstack/init/ready.d/init-aws.sh"
     networks:
       ls:
         ipv4_address: 10.0.2.20

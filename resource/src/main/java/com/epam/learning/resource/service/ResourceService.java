@@ -43,11 +43,10 @@ public class ResourceService {
 		this.producer = producer;
 	}
 
-	public Long crateResource(byte[] file) throws IOException, TikaException, SAXException {
+	public Long createResource(byte[] file) throws IOException, TikaException, SAXException {
 		Resource resource = new Resource(saveToCloud(file));
 		log.info("Created: ({})", resource.getMp3());
 		repository.save(resource);
-		//saveMetadata(file, resource.getId());
 		producer.sendMessage(String.valueOf(resource.getId()));
 		return resource.getId();
 	}

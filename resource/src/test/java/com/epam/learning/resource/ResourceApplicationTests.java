@@ -9,5 +9,10 @@ class ResourceApplicationTests {
 	@Test
 	void contextLoads() {
 	}
+	
+	@Test
+	void testMain() {
+		ResourceApplication.main(new String[] {});
+	}
 
 }

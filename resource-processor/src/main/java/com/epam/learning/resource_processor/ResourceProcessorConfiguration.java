@@ -57,9 +57,9 @@ public class ResourceProcessorConfiguration {
 	}
 
 	@Bean
-	public ProcessorService processorService(RestClient.Builder restClientBuilder,
+	public ProcessorService processorService(RestClient restClient,
 											DiscoveryClient discoveryClient) {
-		return new ProcessorService(restClientBuilder, discoveryClient);
+		return new ProcessorService(restClient, discoveryClient);
 	}
 	
 	@Bean

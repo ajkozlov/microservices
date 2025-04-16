@@ -43,7 +43,7 @@ public class ResourceController {
 	public ResponseEntity<ResourceResponse> createResource(@RequestBody byte[] file) throws FileNotFoundException {
 		Long id;
 		try {
-			id = resourceService.crateResource(file);
+			id = resourceService.createResource(file);
 		} catch (TikaException | IOException | SAXException e) {
 			throw new RuntimeException(e);
 		}

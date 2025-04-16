@@ -31,9 +31,9 @@ public class ProcessorService {
 	private final RestClient restClient;
 	private final DiscoveryClient discoveryClient;
 	
-	public ProcessorService(RestClient.Builder restClient,
+	public ProcessorService(RestClient restClient,
 							DiscoveryClient discoveryClient1) {
-		this.restClient = restClient.build();
+		this.restClient = restClient;
 		this.discoveryClient = discoveryClient1;
 	}
 	
