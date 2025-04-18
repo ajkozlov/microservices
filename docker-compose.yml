@@ -10,8 +10,10 @@ services:
     ports:
       - 5005:5005
     depends_on:
-      - db-song
-      - eureka
+      db-song:
+        condition: service_healthy
+      eureka:
+        condition: service_healthy
     environment:
       DOCKER_EUREKA: eureka
       DOCKER_DB: song-db
@@ -22,62 +24,89 @@ services:
     env_file:
       - .env
     build: ./resource
-#    ports:
-#      - 8095:8091
+    #    ports:
+    #      - 8095:8091
     depends_on:
-      - db-resource
-      - eureka
-      - rabbitMQ
+      db-resource:
+        condition: service_healthy
+      eureka: 
+        condition: service_healthy
+      rabbitMQ: 
+        condition: service_healthy
     environment:
       DOCKER_EUREKA: eureka
       DOCKER_DB: resource-db
+      RABBITMQ_PASSWORD: ${rabbitmq_password}
+      RABBITMQ_USERNAME: ${rabbitmq_user}
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: ${rabbitmq_port}
+      RABBITMQ_QUEUE_NAME: ${rabbitmq_queue}
     dns:
       - 10.0.2.20
     networks:
       - ls
-        
+  
   resource-processor-service:
     env_file:
       - .env
     build: ./resource-processor
     depends_on:
-      - eureka
-      - rabbitMQ
+      eureka:
+        condition: service_healthy
+      rabbitMQ: 
+        condition: service_healthy
     environment:
       DOCKER_EUREKA: eureka
+      RABBITMQ_PASSWORD: ${rabbitmq_password}
+      RABBITMQ_USERNAME: ${rabbitmq_user}
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: ${rabbitmq_port}
+      RABBITMQ_QUEUE_NAME: ${rabbitmq_queue}
     networks:
       - ls
-      
+  
   eureka:
     build: ./eureka-server
     ports:
       - 8761:8761
+    healthcheck:
+      test: [ "CMD", "nc", "-z", "localhost", "8761" ]
+      interval: 5s
+      timeout: 15s
+      retries: 3
     networks:
       - ls
-        
+  
   gateway:
     build: ./gateway
     ports:
       - 8888:8888
     depends_on:
-      - eureka
+      eureka:
+        condition: service_healthy
     environment:
       DOCKER_EUREKA: eureka
     networks:
       - ls
   
   db-song:
-     hostname: song-db
-     image: postgres:16-alpine
-     volumes:
-       - ./init-scripts/song_db/init.sql:/docker-entrypoint-initdb.d/db.sql
-     environment:
-       POSTGRES_USER: ${song_db_user}
-       POSTGRES_PASSWORD: ${song_db_password}
-       POSTGRES_DB: ${song_db_name}
-     networks:
-       - ls
-       
+    hostname: song-db
+    image: postgres:16-alpine
+    volumes:
+      - ./init-scripts/song_db/init.sql:/docker-entrypoint-initdb.d/db.sql
+    environment:
+      POSTGRES_USER: ${song_db_user}
+      POSTGRES_PASSWORD: ${song_db_password}
+      POSTGRES_DB: ${song_db_name}
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${resource_db_user} -d ${resource_db_name}" ]
+      interval: 10s
+      retries: 5
+      start_period: 30s
+      timeout: 10s
+    networks:
+      - ls
+  
   db-resource:
     hostname: resource-db
     image: postgres:16-alpine
@@ -87,13 +116,18 @@ services:
       POSTGRES_USER: ${resource_db_user}
       POSTGRES_PASSWORD: ${resource_db_password}
       POSTGRES_DB: ${resource_db_name}
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${resource_db_user} -d ${resource_db_name}" ]
+      interval: 10s
+      retries: 5
+      start_period: 30s
+      timeout: 10s
     networks:
       - ls
-      
+  
   localstack:
     container_name: "${LOCALSTACK_DOCKER_NAME:-localstack-main}"
     image: localstack/localstack
-#    command: bash -c "aws configure && aws --endpoint-url=http://localhost:4566 s3api create-bucket --bucket resources-bucket"
     ports:
       # Now only required if you need to access LocalStack from the host
       - "127.0.0.1:4566:4566"
@@ -114,19 +148,21 @@ services:
     image: rabbitmq
     command: rabbitmq-server
     hostname: rabbitmq
+    env_file:
+      - .env
     environment:
-      - 'RABBITMQ_DEFAULT_PASS=secret'
-      - 'RABBITMQ_DEFAULT_USER=myuser'
+      RABBITMQ_DEFAULT_PASS: ${rabbitmq_password}
+      RABBITMQ_DEFAULT_USER: ${rabbitmq_user}
     ports:
-        - '5672'
+      - '5672'
     expose:
       - 5672
       - 15672
     healthcheck:
-      test: [ "CMD", "nc", "-z", "localhost", "5672" ]
+      test: rabbitmq-diagnostics -q ping
       interval: 5s
       timeout: 15s
-      retries: 1
+      retries: 3
     networks:
       - ls
 
