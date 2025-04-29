@@ -31,9 +31,9 @@ public class ProcessorService {
 	private final RestClient restClient;
 	private final DiscoveryClient discoveryClient;
 	
-	public ProcessorService(RestClient restClient,
+	public ProcessorService(RestClient.Builder restClientBuilder,
 							DiscoveryClient discoveryClient1) {
-		this.restClient = restClient;
+		this.restClient = restClientBuilder.build();
 		this.discoveryClient = discoveryClient1;
 	}
 	
@@ -41,9 +41,23 @@ public class ProcessorService {
 		byte[] file = getFile(id);
 		try {
 			saveMetadata(file, id);
+			log.info("Metadata saved");
 		} catch (TikaException | IOException | SAXException e) {
 			throw new RuntimeException(e);
 		}
+		sandCallback(id);
+	}
+
+	private void sandCallback(long id) {
+		ServiceInstance serviceInstance = discoveryClient.getInstances("resource").get(0);
+		log.info("Sending callback to resource service");
+		restClient.put()
+				  .uri(serviceInstance.getUri()+"/resources/success/{id}", id)
+				  .retrieve()
+				  .onStatus(status -> status.value() == 500, (request, response) -> {
+					  throw new ResponseStatusException(response.getStatusCode(), response.toString());
+				  })
+				  .toBodilessEntity();
 	}
 
 	private byte[] getFile(long id) {
@@ -76,7 +90,7 @@ public class ProcessorService {
 		songDTO.setName(Optional.ofNullable(metadata.get("dc:title")).orElse("Default"));
 		songDTO.setArtist(Optional.ofNullable(metadata.get("xmpDM:artist")).orElse(""));
 		songDTO.setAlbum(Optional.ofNullable(metadata.get("xmpDM:album")).orElse(""));
-		log.info(songDTO);
+		log.info("Metadata: {}", songDTO);
 		ServiceInstance serviceInstance = discoveryClient.getInstances("song").get(0);
 		restClient.post()
 				  .uri(serviceInstance.getUri()+"/songs")
@@ -87,5 +101,6 @@ public class ProcessorService {
 					  throw new ResponseStatusException(response.getStatusCode(), response.toString());
 				  })
 				  .toBodilessEntity();
+		log.info("Metadata saved to song service");
 	}
 }

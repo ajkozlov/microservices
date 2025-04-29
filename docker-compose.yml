@@ -7,8 +7,6 @@ services:
     env_file:
       - .env
     build: ./song
-    ports:
-      - 5005:5005
     depends_on:
       db-song:
         condition: service_healthy
@@ -32,6 +30,8 @@ services:
       eureka: 
         condition: service_healthy
       rabbitMQ: 
+        condition: service_healthy
+      localstack:
         condition: service_healthy
     environment:
       DOCKER_EUREKA: eureka
@@ -64,7 +64,26 @@ services:
       RABBITMQ_QUEUE_NAME: ${rabbitmq_queue}
     networks:
       - ls
-  
+        
+  storage-service:
+    deploy:
+      replicas: 1
+    env_file:
+      - .env
+    build: ./storage
+    ports:
+      - 8096:8096
+    depends_on:
+      db-storage:
+        condition: service_healthy
+      eureka:
+        condition: service_healthy
+    environment:
+      DOCKER_EUREKA: eureka
+      DOCKER_DB: storage-db
+    networks:
+      - ls
+          
   eureka:
     build: ./eureka-server
     ports:
@@ -73,7 +92,7 @@ services:
       test: [ "CMD", "nc", "-z", "localhost", "8761" ]
       interval: 5s
       timeout: 15s
-      retries: 3
+      retries: 10
     networks:
       - ls
   
@@ -110,6 +129,8 @@ services:
   db-resource:
     hostname: resource-db
     image: postgres:16-alpine
+    ports:
+      - "5432:5432"
     volumes:
       - ./init-scripts/resource_db/init.sql:/docker-entrypoint-initdb.d/db.sql
     environment:
@@ -118,6 +139,24 @@ services:
       POSTGRES_DB: ${resource_db_name}
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -U ${resource_db_user} -d ${resource_db_name}" ]
+      interval: 10s
+      retries: 5
+      start_period: 30s
+      timeout: 10s
+    networks:
+      - ls
+        
+  db-storage:
+    hostname: storage-db
+    image: postgres:16-alpine
+    volumes:
+      - ./init-scripts/storage_db/init.sql:/docker-entrypoint-initdb.d/db.sql
+    environment:
+      POSTGRES_USER: ${storage_db_user}
+      POSTGRES_PASSWORD: ${storage_db_password}
+      POSTGRES_DB: ${storage_db_name}
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${storage_db_user} -d ${storage_db_name}" ]
       interval: 10s
       retries: 5
       start_period: 30s

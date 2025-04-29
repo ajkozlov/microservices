@@ -4,6 +4,7 @@ import com.epam.learning.resource.domain.Resource;
 import com.epam.learning.resource.domain.ResourceRepository;
 import com.epam.learning.resource.messages.Producer;
 import com.epam.learning.resource.repository.S3Service;
+import com.epam.learning.resource.repository.StorageType;
 import org.apache.tika.exception.TikaException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -65,7 +66,7 @@ class ResourceServiceTest {
 	void crateResource_createsResourceSuccessfully() throws IOException, TikaException, SAXException {
 		byte[] file = "test file".getBytes();
 		Resource resource = new Resource("hash");
-		doNothing().when(s3Service).save(anyString(), any(byte[].class));
+		doNothing().when(s3Service).saveToStage(anyString(), any(byte[].class));
 		when(repository.save(any(Resource.class))).thenReturn(resource);
 
 		Long resourceId = resourceService.createResource(file);
@@ -78,9 +79,9 @@ class ResourceServiceTest {
 	void getResource_returnsResourceSuccessfully() throws IOException {
 		String key = "testKey";
 		byte[] file = "test file".getBytes();
-		when(s3Service.download(key)).thenReturn(file);
+		when(s3Service.download(key, StorageType.STAGING)).thenReturn(file);
 
-		byte[] result = resourceService.getResource(key);
+		byte[] result = resourceService.getResource(key, StorageType.STAGING);
 
 		assertArrayEquals(file, result);
 	}
@@ -88,9 +89,9 @@ class ResourceServiceTest {
 	@Test
 	void getResource_throwsRuntimeExceptionOnIOException() throws IOException {
 		String key = "testKey";
-		when(s3Service.download(key)).thenThrow(new IOException());
+		when(s3Service.download(key, StorageType.STAGING)).thenThrow(new IOException());
 
-		assertThrows(RuntimeException.class, () -> resourceService.getResource(key));
+		assertThrows(RuntimeException.class, () -> resourceService.getResource(key, StorageType.STAGING));
 	}
 
 	@Test

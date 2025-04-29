@@ -3,6 +3,7 @@ package com.epam.learning.resource;
 import com.epam.learning.resource.domain.ResourceRepository;
 import com.epam.learning.resource.messages.Producer;
 import com.epam.learning.resource.repository.S3Service;
+import com.epam.learning.resource.repository.StorageService;
 import com.epam.learning.resource.service.ResourceService;
 import org.springframework.amqp.core.Queue;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
@@ -50,8 +51,8 @@ public class ResourceConfiguration {
 	}
 	
 	@Bean
-	public S3Service s3Service(S3Client s3Client) {
-		return new S3Service(s3Client);
+	public S3Service s3Service(S3Client s3Client, StorageService storageService) {
+		return new S3Service(s3Client, storageService);
 	}
 
 	@Bean

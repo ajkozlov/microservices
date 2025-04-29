@@ -4,6 +4,7 @@ import com.epam.learning.resource.domain.Resource;
 import com.epam.learning.resource.domain.ResourceRepository;
 import com.epam.learning.resource.messages.Producer;
 import com.epam.learning.resource.repository.S3Service;
+import com.epam.learning.resource.repository.StorageType;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.cloud.client.discovery.DiscoveryClient;
 import org.apache.tika.exception.TikaException;
@@ -51,9 +52,10 @@ public class ResourceService {
 		return resource.getId();
 	}
 	
-	public byte[] getResource(String key) {
+	public byte[] getResource(String key, StorageType storageType) {
 		try {
-			return s3Service.download(key);
+			log.info("Getting resource: ({}), storageType ({})", key, storageType);
+			return s3Service.download(key, storageType);
 		} catch (IOException e) {
 			throw new RuntimeException(e);
 		}
@@ -62,11 +64,24 @@ public class ResourceService {
 	private String saveToCloud(byte[] file) {
 		String hash = SHAsum(file);
 		try {
-			s3Service.save(hash, file);
+			s3Service.saveToStage(hash, file);
 		} catch (IOException e) {
 			throw new RuntimeException(e);
 		}
 		return hash;
+	}
+	
+	public void resourceProcessed(Long id) {
+		log.info("Resource processed: ({})", id);
+		Resource resource = repository.findById(id).orElseThrow();
+		try {
+			log.info("Moving resource to permanent storage: ({})", resource.getId());
+			s3Service.moveToPermanent(resource.getMp3());
+		} catch (IOException e) {
+			throw new RuntimeException(e);
+		}
+		resource.setStorageType(StorageType.PERMANENT);
+		repository.save(resource);
 	}
 
 	private static String SHAsum(byte[] convertme) {
