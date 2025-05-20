@@ -10,6 +10,11 @@ spring:
   application:
     name:
       gateway
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://authorization-server:9000
   cloud:
     gateway:
       routes:
@@ -21,6 +26,10 @@ spring:
           uri: lb://resource
           predicates:
             - Path=/resources/**
+        - id: authorizationModule
+          uri: lb://authorization
+          predicates:
+            - Path=/oauth2/**
 management:
   tracing:
     sampling:

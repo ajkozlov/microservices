@@ -1,0 +1,35 @@
+server:
+  port: 9000
+
+logging:
+  level:
+    org.springframework.security: trace
+
+spring:
+  application:
+    name: authorization-server
+  security:
+    user:
+      name: user
+      password: password
+    oauth2:
+      authorizationserver:
+        client:
+          storage-client:
+            registration:
+              client-id: "storage-client"
+              client-secret: "{noop}secret"
+              client-authentication-methods:
+                - "client_secret_basic"
+              authorization-grant-types:
+                - "client_credentials"
+                - "refresh_token"
+              redirect-uris:
+                - "http://127.0.0.1:8888/login/oauth2/code/storage-client"
+              post-logout-redirect-uris:
+                - "http://127.0.0.1:8888/"
+              scopes:
+                - "openid"
+                - "storage.read"
+                - "storage.write"
+            require-authorization-consent: true

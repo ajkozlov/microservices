@@ -81,6 +81,7 @@ services:
     environment:
       DOCKER_EUREKA: eureka
       DOCKER_DB: storage-db
+      DOCKER_ZIPKIN: zipkin
     networks:
       - ls
           
@@ -95,7 +96,23 @@ services:
       retries: 10
     networks:
       - ls
-  
+        
+  authorization-server:
+    deploy:
+      replicas: 1
+    env_file:
+      - .env
+    build: ./authorization-server
+    ports:
+      - 9000:9000
+    depends_on:
+      eureka:
+        condition: service_healthy
+    environment:
+      DOCKER_EUREKA: eureka
+    networks:
+      - ls
+    
   gateway:
     build: ./gateway
     ports:

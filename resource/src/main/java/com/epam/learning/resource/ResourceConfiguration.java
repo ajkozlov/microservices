@@ -14,7 +14,15 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
+import org.springframework.security.oauth2.client.OAuth2AuthorizedClientManager;
+import org.springframework.security.oauth2.client.OAuth2AuthorizedClientProvider;
+import org.springframework.security.oauth2.client.OAuth2AuthorizedClientProviderBuilder;
+import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
+import org.springframework.security.oauth2.client.web.DefaultOAuth2AuthorizedClientManager;
+import org.springframework.security.oauth2.client.web.OAuth2AuthorizedClientRepository;
+import org.springframework.security.oauth2.client.web.reactive.function.client.ServletOAuth2AuthorizedClientExchangeFilterFunction;
 import org.springframework.web.client.RestClient;
+import org.springframework.web.reactive.function.client.WebClient;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.regions.Region;
@@ -48,6 +56,32 @@ public class ResourceConfiguration {
 	public ResourceService resourceService(ResourceRepository resourceRepository, RestClient.Builder restClientBuilder,
 										   DiscoveryClient discoveryClient, S3Service s3s, Producer producer) {
 		return new ResourceService(resourceRepository, restClientBuilder, discoveryClient, s3s, producer);
+	}
+
+	@Bean
+	WebClient webClient(OAuth2AuthorizedClientManager authorizedClientManager) {
+		ServletOAuth2AuthorizedClientExchangeFilterFunction oauth2Client =
+				new ServletOAuth2AuthorizedClientExchangeFilterFunction(authorizedClientManager);
+		return WebClient.builder()
+						.apply(oauth2Client.oauth2Configuration())
+						.build();
+	}
+
+	@Bean
+	OAuth2AuthorizedClientManager authorizedClientManager(
+			ClientRegistrationRepository clientRegistrationRepository,
+			OAuth2AuthorizedClientRepository authorizedClientRepository) {
+
+		OAuth2AuthorizedClientProvider authorizedClientProvider =
+				OAuth2AuthorizedClientProviderBuilder.builder()
+													 .authorizationCode()
+													 .refreshToken()
+													 .build();
+		DefaultOAuth2AuthorizedClientManager authorizedClientManager = new DefaultOAuth2AuthorizedClientManager(
+				clientRegistrationRepository, authorizedClientRepository);
+		authorizedClientManager.setAuthorizedClientProvider(authorizedClientProvider);
+
+		return authorizedClientManager;
 	}
 	
 	@Bean
